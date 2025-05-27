@@ -1,0 +1,124 @@
+﻿
+.loading-spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #3498db;
+    border-radius: 50%;
+    animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.table-row-clickable {
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+    .table-row-clickable:hover {
+        background-color: #f8f9fa;
+    }
+
+.search-container {
+    background: #0764a1;
+    color: white;
+    padding: 2rem;
+    border-radius: 15px;
+    margin-bottom: 2rem;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+.card-custom {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.btn-search {
+    background: #05693e;
+    border: none;
+    transition: transform 0.2s;
+    color: white;
+}
+
+    .btn-search:hover {
+        transform: translateY(-2px);
+        color: white;
+    }
+
+    .btn-search:focus {
+        box-shadow: 0 0 0 0.25rem rgba(78, 205, 196, 0.25);
+        color: white;
+    }
+
+.product-image {
+    width: 50px;
+    height: 50px;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+/* Estilos adicionales para mejor presentación */
+.modal-header {
+    border-bottom: 1px solid #dee2e6;
+}
+
+.modal-footer {
+    border-top: 1px solid #dee2e6;
+}
+
+.badge {
+    font-size: 0.875em;
+}
+
+.alert {
+    border-radius: 10px;
+}
+
+.table th {
+    border-top: none;
+    font-weight: 600;
+    color: #495057;
+}
+
+.table-hover tbody tr:hover {
+    color: #495057;
+}
+
+/* Animaciones suaves */
+.card-custom {
+    transition: transform 0.2s ease-in-out;
+}
+
+    .card-custom:hover {
+        transform: translateY(-2px);
+    }
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .search-container {
+        padding: 1.5rem;
+    }
+
+        .search-container h1 {
+            font-size: 1.75rem;
+        }
+
+    .product-image {
+        width: 40px;
+        height: 40px;
+    }
+
+    .table-responsive {
+        font-size: 0.875rem;
+    }
+}

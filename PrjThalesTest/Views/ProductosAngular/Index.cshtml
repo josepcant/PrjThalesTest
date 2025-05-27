@@ -1,0 +1,296 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Búsqueda de Productos - Angular</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- CSS personalizado -->
+    <link href="~/css/productos-angular.css" rel="stylesheet">
+
+    <!-- Angular -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.8.3/angular.min.js"></script>
+    <!-- Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+</head>
+<body>
+    <div ng-app="productosApp" ng-controller="ProductosController" class="container-fluid py-4">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <!-- Header de búsqueda -->
+                <div class="search-container">
+                    <h1 class="text-center mb-4">
+                        <i class="fas fa-search me-2"></i>
+                        Búsqueda de Productos
+                    </h1>
+
+                    <div class="row justify-content-center">
+                        <div class="col-md-8">
+                            <div class="input-group input-group-lg">
+                                <input type="number"
+                                       class="form-control"
+                                       ng-model="searchId"
+                                       placeholder="ID del producto"
+                                       ng-keypress="$event.keyCode == 13 && buscarProductos()">
+                                <button class="btn btn-search btn-lg"
+                                        type="button"
+                                        ng-click="buscarProductos()"
+                                        ng-disabled="loading">
+                                    <span ng-if="!loading">
+                                        <i class="fas fa-search me-2"></i>Buscar
+                                    </span>
+                                    <span ng-if="loading">
+                                        <div class="loading-spinner me-2"></div>Buscando...
+                                    </span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Alertas -->
+                <div ng-if="error" class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    {{error}}
+                    <button type="button" class="btn-close" ng-click="error = null"></button>
+                </div>
+
+                <div ng-if="message" class="alert alert-info alert-dismissible fade show" role="alert">
+                    <i class="fas fa-info-circle me-2"></i>
+                    {{message}}
+                    <button type="button" class="btn-close" ng-click="message = null"></button>
+                </div>
+
+                <!-- Tabla de resultados -->
+                <div class="card card-custom" ng-if="productos.length > 0">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-list me-2"></i>
+                            Resultados ({{productos.length}} producto{{productos.length !== 1 ? 's' : ''}})
+                        </h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Imagen</th>
+                                        <th>Título</th>
+                                        <th>Precio Base</th>
+                                        <th>Impuesto (19%)</th>
+                                        <th>Precio Final</th>
+                                        <th>Categoría</th>
+                                        <th>Fecha Creación</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr ng-repeat="producto in productos"
+                                        class="table-row-clickable"
+                                        ng-click="mostrarDetalles(producto.id)">
+                                        <td><strong>{{producto.id}}</strong></td>
+                                        <td>
+                                            <img ng-if="producto.images && producto.images.length > 0"
+                                                 ng-src="{{producto.images[0]}}"
+                                                 class="product-image"
+                                                 alt="{{producto.title}}">
+                                            <div ng-if="!producto.images || producto.images.length === 0"
+                                                 class="product-image bg-light d-flex align-items-center justify-content-center">
+                                                <i class="fas fa-image text-muted"></i>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <strong>{{producto.title}}</strong>
+                                            <br>
+                                            <small class="text-muted">{{producto.slug}}</small>
+                                        </td>
+                                        <td>${{producto.price | number:2}}</td>
+                                        <td>${{producto.impuesto | number:2}}</td>
+                                        <td><strong>${{producto.precioConImpuesto | number:2}}</strong></td>
+                                        <td><strong>{{producto.category.name}}</strong></td>
+                                        <td>{{producto.creationAt | date:'dd/MM/yyyy'}}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mensaje cuando no hay resultados -->
+                <div ng-if="productos.length === 0 && !loading && searched" class="text-center py-5">
+                    <div class="card card-custom">
+                        <div class="card-body">
+                            <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                            <h4 class="text-muted">No se encontraron productos</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal de detalles -->
+        <div class="modal fade" id="detalleModal" tabindex="-1" role="dialog">
+            <div class="modal-dialog modal-lg" role="document">
+                <div class="modal-content">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Detalles del Producto
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body" ng-if="productoDetalle">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <!-- Galería de imágenes -->
+                                <div ng-if="productoDetalle.images && productoDetalle.images.length > 0">
+                                    <h6>Imágenes del producto:</h6>
+                                    <div class="row">
+                                        <div class="col-6 mb-2" ng-repeat="imagen in productoDetalle.images">
+                                            <img ng-src="{{imagen}}" class="img-fluid rounded" alt="{{productoDetalle.title}}">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div ng-if="!productoDetalle.images || productoDetalle.images.length === 0" class="text-center p-4 bg-light rounded">
+                                    <i class="fas fa-image fa-3x text-muted"></i>
+                                    <p class="text-muted mt-2">Sin imágenes disponibles</p>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <h4>{{productoDetalle.title}}</h4>
+                                <p class="text-muted mb-3">{{productoDetalle.slug}}</p>
+
+                                <div class="mb-3">
+                                    <strong>Descripción:</strong>
+                                    <p>{{productoDetalle.description}}</p>
+                                </div>
+
+                                <div class="row mb-3">
+                                    <div class="col-sm-6">
+                                        <strong>Precio Base:</strong>
+                                        <p class="h5">${{productoDetalle.price | number:2}}</p>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <strong>Impuesto (19%):</strong>
+                                        <p class="h5">${{productoDetalle.impuesto | number:2}}</p>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <strong>Precio Final:</strong>
+                                    <p class="h4 ">${{productoDetalle.precioConImpuesto | number:2}}</p>
+                                </div>
+
+                                <div class="mb-3">
+                                    <strong>Categoría:</strong>
+                                    <p class="h4 ">{{productoDetalle.category.name}}</p>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-sm-6">
+                                        <strong>Creado:</strong>
+                                        <p>{{productoDetalle.creationAt | date:'dd/MM/yyyy'}}</p>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <strong>Actualizado:</strong>
+                                        <p>{{productoDetalle.updatedAt | date:'dd/MM/yyyy'}}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-body text-center" ng-if="loadingDetalle">
+                        <div class="loading-spinner me-2"></div>
+                        <span>Cargando detalles del producto...</span>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+
+    <script>
+        angular.module('productosApp', [])
+            .controller('ProductosController', ['$scope', '$http', function($scope, $http) {
+                $scope.productos = [];
+                $scope.searchId = null;
+                $scope.loading = false;
+                $scope.loadingDetalle = false;
+                $scope.error = null;
+                $scope.message = null;
+                $scope.searched = false;
+                $scope.productoDetalle = null;
+
+                // Función buscar productos
+                $scope.buscarProductos = function() {
+                    $scope.loading = true;
+                    $scope.error = null;
+                    $scope.message = null;
+                    $scope.searched = true;
+
+                    var url = '/ProductosAngular/Search';
+                    if ($scope.searchId) {
+                        url += '?id=' + $scope.searchId;
+                    }
+
+                    $http.get(url)
+                        .then(function(response) {
+                            if (response.data.success) {
+                                $scope.productos = response.data.data;
+                                if ($scope.productos.length === 0) {
+                                    $scope.message = 'No se encontraron productos.';
+                                }
+                            } else {
+                                $scope.error = response.data.message;
+                                $scope.productos = [];
+                            }
+                        })
+                        .catch(function(error) {
+                            $scope.error = 'Error al realizar la búsqueda. Por favor, intente nuevamente.';
+                            $scope.productos = [];
+                        })
+                        .finally(function() {
+                            $scope.loading = false;
+                        });
+                };
+
+                // Función mostrar detalles en modal
+                $scope.mostrarDetalles = function(id) {
+                    $scope.loadingDetalle = true;
+                    $scope.productoDetalle = null;
+
+                    // Mostrar el modal
+                    var modal = new bootstrap.Modal(document.getElementById('detalleModal'));
+                    modal.show();
+
+                    $http.get('/ProductosAngular/GetDetails?id=' + id)
+                        .then(function(response) {
+                            if (response.data.success) {
+                                $scope.productoDetalle = response.data.data;
+                            } else {
+                                $scope.error = response.data.message;
+                            }
+                        })
+                        .catch(function(error) {
+                            $scope.error = 'Error al cargar los detalles del producto.';
+                        })
+                        .finally(function() {
+                            $scope.loadingDetalle = false;
+                        });
+                };
+
+                // Cargar todos los productos al abrir el form
+                $scope.buscarProductos();
+            }]);
+    </script>
+</body>
+</html>
